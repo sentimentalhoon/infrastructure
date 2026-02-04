@@ -60,8 +60,8 @@ server {
     # MinIO Storage (Images)
     # ^~ modifier prevents regex matching (static files block) from taking precedence
     location ^~ /storage/ {
-        rewrite ^/storage/(.*) /$1 break;
         set $minio_upstream "http://campstation-minio:9000";
+        rewrite ^/storage/(.*) /$1 break;
         proxy_pass $minio_upstream;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
@@ -76,8 +76,8 @@ server {
 
     # MinIO Console
     location /minio-console/ {
-        rewrite ^/minio-console/(.*) /$1 break;
         set $minio_console_upstream "http://campstation-minio:9001";
+        rewrite ^/minio-console/(.*) /$1 break;
         proxy_pass $minio_console_upstream;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
