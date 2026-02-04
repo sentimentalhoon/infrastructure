@@ -1,0 +1,43 @@
+services:
+  # Nginx 리버스 프록시 (Gateway)
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: nginx-gateway
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # SSL 인증서 디렉토리 전체 마운트
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      # 설정 파일 핫로드 (빌드 없이 적용)
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      # 로그
+      - nginx_logs:/var/log/nginx
+      # Certbot (SSL 갱신용)
+      - certbot_www:/var/www/certbot:ro
+    networks:
+      - web-proxy-net
+    restart: unless-stopped
+
+  # Certbot (SSL Certificate)
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+
+volumes:
+  nginx_logs:
+  certbot_www:
+
+networks:
+  web-proxy-net:
+    external: true
