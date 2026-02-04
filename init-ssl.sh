@@ -93,7 +93,7 @@ sleep 10
 echo "🔐 Requesting SSL Certificates via Certbot..."
 
 # Certbot domains: space to comma
-CERTBOT_DOMAINS=$(echo "$DOMAIN_NAME" | tr ' ' ',')
+CERTBOT_DOMAINS=$(echo "$ALL_DOMAINS" | tr ' ' ',')
 # Primary domain (first one) for folder path
 PRIMARY_DOMAIN=$(echo "$DOMAIN_NAME" | awk '{print $1}')
 
