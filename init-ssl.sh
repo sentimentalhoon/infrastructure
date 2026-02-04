@@ -47,22 +47,18 @@ echo "=================================================="
 echo ""
 
 # Configuration Paths
-NGINX_CONF="./nginx/conf.d/psmo-community.conf"
-NGINX_CONF_BAK="./nginx/conf.d/psmo-community.conf.bak"
+TEMP_CONF="./nginx/conf.d/temp-setup.conf"
 
-# 1. Backup existing config and create HTTP-only temp config
-echo "📝 Switching to temporary Nginx configuration..."
-# Backup only if not already backed up
-# Backup only if not already backed up AND original exists
-if [ ! -f $NGINX_CONF_BAK ] && [ -f $NGINX_CONF ]; then
-    cp $NGINX_CONF $NGINX_CONF_BAK
-fi
+# 1. Clean up existing configs to prevent startup errors (conflicting SSL)
+echo "🧹 Clearing existing Nginx configs (Templates will remain)..."
+rm -f ./nginx/conf.d/*.conf
 
-# Create temp config (HTTP only, no SSL)
-cat > $NGINX_CONF <<EOF
+# Create temp config (HTTP only, no SSL) for ALL domains
+echo "📝 Creating temporary HTTP-only configuration..."
+cat > $TEMP_CONF <<EOF
 server {
     listen 80;
-    server_name $DOMAIN_NAME;
+    server_name $ALL_DOMAINS;
     
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
@@ -105,35 +101,27 @@ CERTBOT_EXIT_CODE=$?
 
 # 4. Restore and Update Config logic
 if [ $CERTBOT_EXIT_CODE -ne 0 ]; then
-    echo "❌ Certbot failed! Restoring original config..."
-    if [ -f $NGINX_CONF_BAK ]; then
-        mv $NGINX_CONF_BAK $NGINX_CONF
-    else
-        rm $NGINX_CONF
-    fi
+    echo "❌ Certbot failed!"
+    echo "   Removing temp config..."
+    rm -f $TEMP_CONF
+    echo "   You may need to run ./apply-nginx-config.sh to restore previous configs."
     exit 1
 else
     echo "✅ Certificate obtained successfully!"
-    echo "♻️  Restoring and updating Nginx configuration..."
+    echo "🧹 Removing temporary configuration..."
+    rm -f $TEMP_CONF
     
-    # Generate Config from Template
-    echo "🔧 Generating Nginx configuration from template..."
+    echo "♻️  Regenerating Nginx configuration..."
     
-    # Check if template exists
-    if [ ! -f "${NGINX_CONF}.template" ]; then
-        echo "❌ Template file not found: ${NGINX_CONF}.template"
-        exit 1
+    # Run the apply script to generate all configs
+    if [ -f "./apply-nginx-config.sh" ]; then
+        chmod +x ./apply-nginx-config.sh
+        ./apply-nginx-config.sh
+    else
+        echo "❌ apply-nginx-config.sh not found! Please run it manually."
     fi
-    
-    # Read template and substitute variables
-    # We use sed for simple substitution to avoid installing gettext (envsubst)
-    # 1. Replace ${DOMAIN_NAME}
-    # 2. Replace ${PRIMARY_DOMAIN}
-    sed -e "s|\${DOMAIN_NAME}|$DOMAIN_NAME|g" \
-        -e "s|\${PRIMARY_DOMAIN}|$PRIMARY_DOMAIN|g" \
-        "${NGINX_CONF}.template" > "$NGINX_CONF"
-        
-    echo "✅ Configuration generated for domains: $DOMAIN_NAME"
+     
+    echo "✅ Configuration generated for domains: $ALL_DOMAINS"
 fi
 
 # 5. Restart Nginx
