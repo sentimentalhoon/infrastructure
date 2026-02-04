@@ -103,7 +103,8 @@ server {
     }
 
     # 3. Block malicious directories/paths
-    location ~* ^/(wp-|wordpress|admin|phpmyadmin|adminer|console|dashboard|setup|install|backup|test|old|new|db-admin|debug|backend|private|_profiler|_ignition|_dev|_next|aws|docker|kube|cgi-bin) {
+    # 3. Block malicious directories/paths
+    location ~* ^/(wp-|wordpress|admin|phpmyadmin|adminer|console|dashboard|setup|install|backup|test|old|new|db-admin|debug|backend|private|_profiler|_ignition|_dev|aws|docker|kube|cgi-bin) {
         access_log off; log_not_found off; return 444;
     }
     
