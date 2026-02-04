@@ -72,7 +72,7 @@ server {
     }
 
     # Rate limiting
-    limit_req zone=general burst=50 nodelay;
+    limit_req zone=general burst=200 nodelay;
 
     # --- 🛡️ SECURITY: ADVANCED HARDENING 🛡️ ---
     
@@ -104,7 +104,7 @@ server {
 
     # 3. Block malicious directories/paths
     # 3. Block malicious directories/paths
-    location ~* ^/(wp-|wordpress|admin|phpmyadmin|adminer|console|dashboard|setup|install|backup|test|old|new|db-admin|debug|backend|private|_profiler|_ignition|_dev|aws|docker|kube|cgi-bin) {
+    location ~* ^/(wp-|wordpress|admin|phpmyadmin|adminer|console|setup|install|backup|test|old|new|db-admin|debug|backend|private|_profiler|_ignition|_dev|aws|docker|kube|cgi-bin) {
         access_log off; log_not_found off; return 444;
     }
     
