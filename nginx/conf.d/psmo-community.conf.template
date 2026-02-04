@@ -92,7 +92,7 @@ server {
 
     # 1. Block strict malicious extensions (End of string or followed by .)
     # Covers: .php, .php.1, .bak, .env, .git
-    location ~* \.(php|phtml|phar|pl|py|cgi|sh|bash|sql|log|old|ini|swp|save|git|svn|hg|ds_store|lock|conf|yaml|yml)($|\.) {
+    location ~* \.(php|phtml|phar|pl|py|cgi|sh|bash|sql|log|old|ini|swp|save|git|svn|hg|ds_store|lock|conf|yaml|yml|local|production|test|dev|backup|1|2|3)($|\.) {
         access_log off; log_not_found off; return 444;
     }
 

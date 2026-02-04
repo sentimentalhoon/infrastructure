@@ -1,3 +1,14 @@
+# ⚠️  IMPORTANT: AUTO-GENERATED CONFIGURATION
+# server_name and ssl_certificate paths in this file are automatically updated
+# by the ./init-ssl.sh script based on your selected Environment Profile.
+# DO NOT MANUALLY EDIT DOMAINS HERE unless you know what you are doing.
+
+# Health Check 로그 제외 필터링 (Fallback for missing nginx.conf map)
+map "$remote_addr:$http_user_agent" $is_loggable {
+    ~^127\.0\.0\.1:curl 0;
+    default 1;
+}
+
 server {
     listen 80;
     server_name ${CAMPSTATION_DOMAIN};
@@ -18,15 +29,20 @@ server {
     http2 on;
     server_name ${CAMPSTATION_DOMAIN};
 
-    # SSL 설정 (기본 경로 - init-ssl.sh 실행 후 유효)
-    ssl_certificate /etc/letsencrypt/live/${PRIMARY_DOMAIN}/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/${PRIMARY_DOMAIN}/privkey.pem;
-
-    # HTTP/2 및 버퍼 최적화
+    # 🔗 Canonical Domain Redirect
+    if ($host != "${PRIMARY_DOMAIN}") {
+        return 301 https://${PRIMARY_DOMAIN}$request_uri;
+    }
+    
+    # HTTP/2 및 버퍼 최적화 (대용량 Sitemap 대응)
     large_client_header_buffers 4 32k;
     proxy_buffer_size 128k;
     proxy_buffers 4 256k;
     proxy_busy_buffers_size 256k;
+
+    # SSL 설정 (기본 경로 - init-ssl.sh 실행 후 유효)
+    ssl_certificate /etc/letsencrypt/live/${PRIMARY_DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${PRIMARY_DOMAIN}/privkey.pem;
 
     # Upload Limit
     client_max_body_size 100M;
@@ -40,6 +56,62 @@ server {
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-XSS-Protection "1; mode=block" always;
     add_header Referrer-Policy "no-referrer-when-downgrade" always;
+
+    # Custom Error Pages
+    error_page 404 /404.html;
+    error_page 500 502 503 504 /50x.html;
+
+    location = /404.html {
+        root /usr/share/nginx/html;
+        internal;
+    }
+    
+    location = /50x.html {
+        root /usr/share/nginx/html;
+        internal;
+    }
+
+    # Rate limiting
+    limit_req zone=general burst=50 nodelay;
+
+    # --- 🛡️ SECURITY: ADVANCED HARDENING 🛡️ ---
+    
+    # 1. Block unwanted HTTP methods
+    if ($request_method !~ ^(GET|POST|HEAD|PUT|DELETE|PATCH|OPTIONS)$ ) {
+        return 405;
+    }
+
+    # 2. Block Malicious User-Agents
+    if ($http_user_agent ~* (acunetix|sqlmap|nikto|metasploit|gobuster|dirbuster|nmap|zenmap|nessus|openvas|vega|w3af|zap|burp|hydra|john|medusa|ncrack|onesixtyone|patator|snmpwalk|snmpcheck|enum4linux|smbmap|crackmapexec|exploitdb|searchsploit|payloads|fuzz|scanner|grabber)) {
+        return 444;
+    }
+
+    # 3. Block common web attack patterns in URI and Query String
+    if ($request_uri ~* ((\.\.|%2e%2e)(/|%2f|\\|%5c)) ) { return 444; } # Directory Traversal
+    if ($query_string ~* (union|select|insert|update|delete|drop|count|truncate|eval|concat|char|base64|document\.|window\.|alert\(|cookie) ) { return 444; } # SQLi & XSS
+
+    # --- 🛡️ SECURITY: BOT & EXPLOIT BLOCKING 🛡️ ---
+
+    # 1. Block strict malicious extensions
+    location ~* \.(php|phtml|phar|pl|py|cgi|sh|bash|sql|log|old|ini|swp|save|git|svn|hg|ds_store|lock|conf|yaml|yml|local|production|test|dev|backup|1|2|3)($|\.) {
+        access_log off; log_not_found off; return 444;
+    }
+
+    # 2. Block specific sensitive files/filenames
+    location ~* /(env|environment|printenv|phpinfo|info|secrets|keys|config|aws|credentials|sendgrid|firebase|gcloud|actuator|Makefile|Procfile|server-info|__debug__)($|\.) {
+        access_log off; log_not_found off; return 444;
+    }
+
+    # 3. Block malicious directories/paths
+    location ~* ^/(wp-|wordpress|admin|phpmyadmin|adminer|console|dashboard|setup|install|backup|test|old|new|db-admin|debug|backend|private|_profiler|_ignition|_dev|_next|aws|docker|kube|cgi-bin) {
+        access_log off; log_not_found off; return 444;
+    }
+    
+    # 4. Block Hidden Files (Dotfiles) except .well-known
+    location ~ /\.(?!well-known).* {
+        access_log off; log_not_found off; return 444;
+    }
+    # ----------------------------------------------------
 
     # Backend API Routing
     location /api {
