@@ -1,0 +1,60 @@
+server {
+    listen 80;
+    server_name ${CAMPSTATION_DOMAIN};
+    
+    # SSL 인증 전 HTTP 챌린지 허용
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    # 모든 HTTP 요청을 HTTPS로 리다이렉트
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    server_name ${CAMPSTATION_DOMAIN};
+
+    # SSL 설정 (기본 경로 - init-ssl.sh 실행 후 유효)
+    ssl_certificate /etc/letsencrypt/live/${CAMPSTATION_DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${CAMPSTATION_DOMAIN}/privkey.pem;
+
+    # Backend API Routing
+    location /api {
+        proxy_pass http://campstation-backend:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # MinIO Storage Routing (e.g. /storage/bucket/file)
+    location /storage {
+        rewrite ^/storage/(.*) /$1 break;
+        proxy_pass http://campstation-minio:9000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    # MinIO Console
+    location /minio-console/ {
+        rewrite ^/minio-console/(.*) /$1 break;
+        proxy_pass http://campstation-minio:9001;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+
+    # Frontend (Next.js)
+    location / {
+        proxy_pass http://campstation-frontend:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

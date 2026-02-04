@@ -36,21 +36,39 @@ echo "  Applying Nginx Configuration"
 echo "  Domains: $DOMAIN_NAME"
 echo "=================================================="
 
+
+# -----------------------------------------------------------------------------
+# PSMO Community Configuration
+# -----------------------------------------------------------------------------
 NGINX_CONF="./nginx/conf.d/psmo-community.conf"
 TEMPLATE="${NGINX_CONF}.template"
 
-if [ ! -f "$TEMPLATE" ]; then
-    echo "❌ Template file not found: $TEMPLATE"
-    exit 1
+if [ -f "$TEMPLATE" ]; then
+    echo "🔧 Generating PSMO Community Nginx config..."
+    sed -e "s|\${DOMAIN_NAME}|$DOMAIN_NAME|g" \
+        -e "s|\${PRIMARY_DOMAIN}|$PRIMARY_DOMAIN|g" \
+        "$TEMPLATE" > "$NGINX_CONF"
+else
+    echo "⚠️  Template file not found: $TEMPLATE (Skipping PSMO)"
 fi
 
-echo "🔧 Generating Nginx configuration from template..."
+# -----------------------------------------------------------------------------
+# CampStation Configuration
+# -----------------------------------------------------------------------------
+CAMP_CONF="./nginx/conf.d/campstation.conf"
+CAMP_TEMPLATE="${CAMP_CONF}.template"
 
-sed -e "s|\${DOMAIN_NAME}|$DOMAIN_NAME|g" \
-    -e "s|\${PRIMARY_DOMAIN}|$PRIMARY_DOMAIN|g" \
-    "$TEMPLATE" > "$NGINX_CONF"
-
-echo "✅ Configuration generated at $NGINX_CONF"
+if [ -n "$CAMPSTATION_DOMAIN" ]; then
+    if [ -f "$CAMP_TEMPLATE" ]; then
+        echo "🔧 Generating CampStation Nginx config..."
+        sed -e "s|\${CAMPSTATION_DOMAIN}|$CAMPSTATION_DOMAIN|g" \
+            "$CAMP_TEMPLATE" > "$CAMP_CONF"
+    else
+        echo "⚠️  Template file not found: $CAMP_TEMPLATE (Skipping CampStation)"
+    fi
+else
+    echo "ℹ️  CAMPSTATION_DOMAIN not set in .env (Skipping CampStation)"
+fi
 
 echo "🔄 Reloading Nginx..."
 docker compose exec nginx nginx -s reload
