@@ -62,6 +62,7 @@ if [ -n "$CAMPSTATION_DOMAIN" ]; then
     if [ -f "$CAMP_TEMPLATE" ]; then
         echo "🔧 Generating CampStation Nginx config..."
         sed -e "s|\${CAMPSTATION_DOMAIN}|$CAMPSTATION_DOMAIN|g" \
+            -e "s|\${PRIMARY_DOMAIN}|$PRIMARY_DOMAIN|g" \
             "$CAMP_TEMPLATE" > "$CAMP_CONF"
     else
         echo "⚠️  Template file not found: $CAMP_TEMPLATE (Skipping CampStation)"
