@@ -30,8 +30,8 @@ server {
     server_name ${CAMPSTATION_DOMAIN};
 
     # 🔗 Canonical Domain Redirect
-    if ($host != "${PRIMARY_DOMAIN}") {
-        return 301 https://${PRIMARY_DOMAIN}$request_uri;
+    if ($host != "${CAMPSTATION_DOMAIN}") {
+        return 301 https://${CAMPSTATION_DOMAIN}$request_uri;
     }
     
     # HTTP/2 및 버퍼 최적화 (대용량 Sitemap 대응)
@@ -41,8 +41,8 @@ server {
     proxy_busy_buffers_size 256k;
 
     # SSL 설정 (기본 경로 - init-ssl.sh 실행 후 유효)
-    ssl_certificate /etc/letsencrypt/live/${PRIMARY_DOMAIN}/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/${PRIMARY_DOMAIN}/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/${CAMPSTATION_DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${CAMPSTATION_DOMAIN}/privkey.pem;
 
     # Upload Limit
     client_max_body_size 100M;
