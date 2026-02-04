@@ -32,6 +32,15 @@ if [ -z "$DOMAIN_NAME" ]; then
     echo "❌ DOMAIN_NAME is empty in .env. Please re-run ./setup-env.sh"
     exit 1
 fi
+
+# Combine domains, removing carriage returns
+ALL_DOMAINS=$(echo "$DOMAIN_NAME" | tr -d '\r')
+CAMP_DOMAIN_CLEAN=$(echo "$CAMPSTATION_DOMAIN" | tr -d '\r')
+
+if [ -n "$CAMP_DOMAIN_CLEAN" ]; then
+    ALL_DOMAINS="$ALL_DOMAINS $CAMP_DOMAIN_CLEAN"
+fi
+
 if [ -z "$CERTBOT_EMAIL" ]; then
     echo "❌ CERTBOT_EMAIL is empty in .env. Please re-run ./setup-env.sh"
     exit 1
