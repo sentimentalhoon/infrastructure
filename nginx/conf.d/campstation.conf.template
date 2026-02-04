@@ -60,30 +60,18 @@ server {
     # MinIO Storage (Images)
     # ^~ modifier prevents regex matching (static files block) from taking precedence
     location ^~ /storage/ {
-        set $minio_upstream "http://campstation-minio:9000";
+        limit_req zone=general burst=200 nodelay;
         rewrite ^/storage/(.*) /$1 break;
-        proxy_pass $minio_upstream;
+        proxy_pass http://campstation-minio:9000;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-
+        
         # MinIO 헤더 숨김
         proxy_hide_header x-amz-request-id;
         proxy_hide_header x-minio-deployment-id;
-    }
-
-    # MinIO Console
-    location /minio-console/ {
-        set $minio_console_upstream "http://campstation-minio:9001";
-        rewrite ^/minio-console/(.*) /$1 break;
-        proxy_pass $minio_console_upstream;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
     }
 
     # Frontend (Next.js)
