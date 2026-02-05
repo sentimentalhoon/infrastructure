@@ -41,6 +41,12 @@ if [ -n "$CAMP_DOMAIN_CLEAN" ]; then
     ALL_DOMAINS="$ALL_DOMAINS $CAMP_DOMAIN_CLEAN"
 fi
 
+GLAMPING_DOMAIN_CLEAN=$(echo "$GLAMPING_DOMAIN" | tr -d '\r')
+if [ -n "$GLAMPING_DOMAIN_CLEAN" ]; then
+    ALL_DOMAINS="$ALL_DOMAINS $GLAMPING_DOMAIN_CLEAN"
+fi
+
+
 if [ -z "$CERTBOT_EMAIL" ]; then
     echo "❌ CERTBOT_EMAIL is empty in .env. Please re-run ./setup-env.sh"
     exit 1

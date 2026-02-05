@@ -71,6 +71,26 @@ else
     echo "ℹ️  CAMPSTATION_DOMAIN not set in .env (Skipping CampStation)"
 fi
 
+# -----------------------------------------------------------------------------
+# Glamping Configuration (New)
+# -----------------------------------------------------------------------------
+GLAMPING_CONF="./nginx/conf.d/glamping.conf"
+GLAMPING_TEMPLATE="${GLAMPING_CONF}.template"
+
+if [ -n "$GLAMPING_DOMAIN" ]; then
+    if [ -f "$GLAMPING_TEMPLATE" ]; then
+        echo "🔧 Generating Glamping Nginx config..."
+        sed -e "s|\${GLAMPING_DOMAIN}|$GLAMPING_DOMAIN|g" \
+            -e "s|\${PRIMARY_DOMAIN}|$PRIMARY_DOMAIN|g" \
+            "$GLAMPING_TEMPLATE" > "$GLAMPING_CONF"
+    else
+        echo "⚠️  Template file not found: $GLAMPING_TEMPLATE (Skipping Glamping)"
+    fi
+else
+    echo "ℹ️  GLAMPING_DOMAIN not set in .env (Skipping Glamping)"
+fi
+
+
 echo "🔄 Reloading Nginx..."
 docker compose exec nginx nginx -s reload
 

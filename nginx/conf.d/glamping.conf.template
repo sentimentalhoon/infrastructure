@@ -1,0 +1,78 @@
+# ⚠️  IMPORTANT: AUTO-GENERATED CONFIGURATION
+# server_name and ssl_certificate paths in this file are automatically updated
+# by the ./init-ssl.sh script based on your selected Environment Profile.
+
+# HTTP -> HTTPS Redirect
+server {
+    listen 80;
+    server_name ${GLAMPING_DOMAIN};
+    
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+    
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# HTTPS
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name ${GLAMPING_DOMAIN};
+
+    # SSL Certificates
+    ssl_certificate /etc/letsencrypt/live/${PRIMARY_DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${PRIMARY_DOMAIN}/privkey.pem;
+
+    # Logs
+    access_log /var/log/nginx/glamping_access.log combined;
+    error_log /var/log/nginx/glamping_error.log;
+
+    # Security Headers
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "no-referrer-when-downgrade" always;
+
+    # Custom Error Pages
+    error_page 404 /404.html;
+    error_page 500 502 503 504 /50x.html;
+
+    location = /404.html {
+        root /usr/share/nginx/html;
+        internal;
+    }
+    
+    location = /50x.html {
+        root /usr/share/nginx/html;
+        internal;
+    }
+
+    # Proxy to Glamping Frontend
+    location / {
+        proxy_pass http://glamping-frontend:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Static File Caching
+    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot|json|webmanifest)$ {
+        proxy_pass http://glamping-frontend:3000;
+        proxy_cache_valid 200 1y;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+     # Block Hidden Files (Dotfiles) except .well-known
+    location ~ /\.(?!well-known).* {
+        access_log off; log_not_found off; return 444;
+    }
+}

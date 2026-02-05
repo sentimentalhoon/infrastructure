@@ -44,6 +44,15 @@ if [ -z "$CERTBOT_EMAIL" ]; then
     exit 1
 fi
 
+echo ""
+echo "🏕️  CampStation Domain Configuration"
+read -p "Enter CampStation Domain (optional): " CAMPSTATION_DOMAIN
+
+echo ""
+echo "⛺  Glamping Domain Configuration"
+read -p "Enter Glamping Domain (optional): " GLAMPING_DOMAIN
+
+
 # -----------------------------------------------------------------------------
 # 2. Write to .env
 # -----------------------------------------------------------------------------
@@ -56,6 +65,11 @@ cat > .env << EOF
 # --- Domain & SSL ---
 DOMAIN_NAME="${DOMAIN_NAME}"
 CERTBOT_EMAIL="${CERTBOT_EMAIL}"
+
+# --- Project Domains ---
+CAMPSTATION_DOMAIN="${CAMPSTATION_DOMAIN}"
+GLAMPING_DOMAIN="${GLAMPING_DOMAIN}"
+
 EOF
 
 echo ""
