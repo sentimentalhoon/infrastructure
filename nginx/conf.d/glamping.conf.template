@@ -35,7 +35,11 @@ server {
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-XSS-Protection "1; mode=block" always;
-    add_header Referrer-Policy "no-referrer-when-downgrade" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=()" always;
+    # CSP: Allow self and data images, inline styles/scripts (adjust as needed for Next.js)
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; connect-src 'self';" always;
+
 
     # Custom Error Pages
     error_page 404 /404.html;
@@ -71,8 +75,14 @@ server {
         add_header Cache-Control "public, immutable";
     }
 
-     # Block Hidden Files (Dotfiles) except .well-known
+    # Block Hidden Files (Dotfiles) except .well-known
     location ~ /\.(?!well-known).* {
         access_log off; log_not_found off; return 444;
     }
+
+    # Block AI Scrapers & Crawlers
+    if ($http_user_agent ~* (GPTBot|ChatGPT|ClaudeBot|Claude-Web|CCBot|CommonCrawl|Bytespider|FacebookBot|Google-Extended|Amazonbot)) {
+        return 444;
+    }
+
 }
