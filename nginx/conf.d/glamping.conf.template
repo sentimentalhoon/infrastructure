@@ -38,7 +38,7 @@ server {
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
     add_header Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=()" always;
     # CSP: Allow self and data images, inline styles/scripts (adjust as needed for Next.js)
-    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://openapi.map.naver.com https://ncp-ncloud-maps.naver.com; img-src 'self' data: blob: https://*.pstatic.net https://openapi.map.naver.com; style-src 'self' 'unsafe-inline'; connect-src 'self' https://naveropenapi.apigw.ntruss.com https://ncp-ncloud-maps.naver.com; worker-src 'self' blob:;" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://openapi.map.naver.com https://ncp-ncloud-maps.naver.com https://oapi.map.naver.com https://nrbe.pstatic.net; img-src 'self' data: blob: https://*.pstatic.net https://openapi.map.naver.com https://*.naver.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://naveropenapi.apigw.ntruss.com https://ncp-ncloud-maps.naver.com https://kr-col-ext.nelo.navercorp.com; worker-src 'self' blob:;" always;
 
 
     # Custom Error Pages
