@@ -38,7 +38,7 @@ server {
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
     add_header Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=()" always;
     # CSP: Allow self and data images, inline styles/scripts (adjust as needed for Next.js)
-    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; connect-src 'self'; worker-src 'self' blob:;" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://openapi.map.naver.com https://ncp-ncloud-maps.naver.com; img-src 'self' data: blob: https://*.pstatic.net https://openapi.map.naver.com; style-src 'self' 'unsafe-inline'; connect-src 'self' https://naveropenapi.apigw.ntruss.com https://ncp-ncloud-maps.naver.com; worker-src 'self' blob:;" always;
 
 
     # Custom Error Pages
@@ -54,6 +54,57 @@ server {
         root /usr/share/nginx/html;
         internal;
     }
+
+
+    # Rate limiting
+    limit_req zone=general burst=50 nodelay;
+
+    # --- 🛡️ SECURITY: ADVANCED HARDENING 🛡️ ---
+    
+    # 1. Block unwanted HTTP methods
+    if ($request_method !~ ^(GET|POST|HEAD|PUT|DELETE|PATCH|OPTIONS)$ ) {
+        return 405;
+    }
+
+    # 2. Block Malicious User-Agents (Flattened)
+    if ($http_user_agent ~* (acunetix|sqlmap|nikto|metasploit|gobuster|dirbuster|nmap|zenmap|nessus|openvas|vega|w3af|zap|burp|hydra|john|medusa|ncrack|onesixtyone|patator|snmpwalk|snmpcheck|enum4linux|smbmap|crackmapexec|exploitdb|searchsploit|payloads|fuzz|scanner|grabber)) {
+        return 444;
+    }
+
+    # 3. Block common web attack patterns in URI and Query String
+    if ($request_uri ~* ((\.\.|%2e%2e)(/|%2f|\\|%5c)) ) { return 444; } # Directory Traversal
+    if ($query_string ~* (union|select|insert|update|delete|drop|count|truncate|eval|concat|char|base64|document\.|window\.|alert\(|cookie) ) { return 444; } # SQLi & XSS
+
+    # --- 🛡️ SECURITY: BOT & EXPLOIT BLOCKING (Existing) 🛡️ ---
+
+    # 1. Block strict malicious extensions (End of string or followed by .)
+    # Covers: .php, .php.1, .bak, .env, .git
+    location ~* \.(php|phtml|phar|pl|py|cgi|sh|bash|sql|log|old|ini|swp|save|git|svn|hg|ds_store|lock|conf|yaml|yml|local|production|test|dev|backup|1|2|3)($|\.) {
+        access_log off; log_not_found off; return 444;
+    }
+
+    # 2. Block specific sensitive files/filenames (regardless of extension or path)
+    # Covers: /env, /env.js, /secrets.json, /config.js, /id_rsa, /printenv, /phpinfo
+    location ~* /(env|environment|printenv|phpinfo|info|secrets|keys|config|aws|credentials|sendgrid|firebase|gcloud|actuator|Makefile|Procfile|server-info|__debug__)($|\.) {
+        access_log off; log_not_found off; return 444;
+    }
+
+    # 3. Block malicious directories/paths (Prefix)
+    # Covers: /wp-admin, /wordpress, /_next, /admin, /backend, /private
+    location ~* ^/(wp-|wordpress|admin|phpmyadmin|adminer|console|dashboard|setup|install|backup|test|old|new|db-admin|debug|backend|private|_profiler|_ignition|_dev|_next|aws|docker|kube|cgi-bin) {
+        access_log off; log_not_found off; return 444;
+    }
+    
+    # 4. Block Hidden Files (Dotfiles) except .well-known
+    location ~ /\.(?!well-known).* {
+        access_log off; log_not_found off; return 444;
+    }
+
+    # 5. Block AI Scrapers & Crawlers
+    if ($http_user_agent ~* (GPTBot|ChatGPT|ClaudeBot|Claude-Web|CCBot|CommonCrawl|Bytespider|FacebookBot|Google-Extended|Amazonbot)) {
+        return 444;
+    }
+    # ----------------------------------------------------
 
     # Proxy to Glamping Frontend
     location / {
@@ -74,15 +125,4 @@ server {
         expires 1y;
         add_header Cache-Control "public, immutable";
     }
-
-    # Block Hidden Files (Dotfiles) except .well-known
-    location ~ /\.(?!well-known).* {
-        access_log off; log_not_found off; return 444;
-    }
-
-    # Block AI Scrapers & Crawlers
-    if ($http_user_agent ~* (GPTBot|ChatGPT|ClaudeBot|Claude-Web|CCBot|CommonCrawl|Bytespider|FacebookBot|Google-Extended|Amazonbot)) {
-        return 444;
-    }
-
 }
