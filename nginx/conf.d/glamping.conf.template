@@ -91,7 +91,7 @@ server {
 
     # 3. Block malicious directories/paths (Prefix)
     # Covers: /wp-admin, /wordpress, /_next, /admin, /backend, /private
-    location ~* ^/(wp-|wordpress|admin|phpmyadmin|adminer|console|dashboard|setup|install|backup|test|old|new|db-admin|debug|backend|private|_profiler|_ignition|_dev|_next|aws|docker|kube|cgi-bin) {
+    location ~* ^/(wp-|wordpress|admin|phpmyadmin|adminer|console|dashboard|setup|install|backup|test|old|new|db-admin|debug|backend|private|_profiler|_ignition|_dev|aws|docker|kube|cgi-bin) {
         access_log off; log_not_found off; return 444;
     }
     
