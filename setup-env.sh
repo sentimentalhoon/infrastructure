@@ -28,8 +28,9 @@ fi
 # 1. SSL / Domain Configuration
 # -----------------------------------------------------------------------------
 echo "🌐 Domain & SSL Configuration"
-echo "   Enter domains separated by space (include ALL domains for all projects)."
-echo "   Example: dool.co.kr www.dool.co.kr api.dool.co.kr"
+echo "   Enter ONLY the Primary Domain (e.g., PSMO Community) and its aliases."
+echo "   DO NOT include CampStation, Glamping, or NMGSOFT domains here (enter them below)."
+echo "   Example: mycommunity.duckdns.org"
 read -p "Enter Domain(s): " DOMAIN_NAME
 
 if [ -z "$DOMAIN_NAME" ]; then
