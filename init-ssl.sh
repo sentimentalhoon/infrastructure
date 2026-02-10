@@ -46,6 +46,11 @@ if [ -n "$GLAMPING_DOMAIN_CLEAN" ]; then
     ALL_DOMAINS="$ALL_DOMAINS $GLAMPING_DOMAIN_CLEAN"
 fi
 
+NMGSOFT_DOMAIN_CLEAN=$(echo "$NMGSOFT_DOMAIN" | tr -d '\r')
+if [ -n "$NMGSOFT_DOMAIN_CLEAN" ]; then
+    ALL_DOMAINS="$ALL_DOMAINS $NMGSOFT_DOMAIN_CLEAN"
+fi
+
 
 if [ -z "$CERTBOT_EMAIL" ]; then
     echo "❌ CERTBOT_EMAIL is empty in .env. Please re-run ./setup-env.sh"

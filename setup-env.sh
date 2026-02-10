@@ -52,6 +52,10 @@ echo ""
 echo "⛺  Glamping Domain Configuration"
 read -p "Enter Glamping Domain (optional): " GLAMPING_DOMAIN
 
+echo ""
+echo "🏢  NMGSOFT Domain Configuration"
+read -p "Enter NMGSOFT Domain (optional): " NMGSOFT_DOMAIN
+
 
 # -----------------------------------------------------------------------------
 # 2. Write to .env
@@ -69,6 +73,7 @@ CERTBOT_EMAIL="${CERTBOT_EMAIL}"
 # --- Project Domains ---
 CAMPSTATION_DOMAIN="${CAMPSTATION_DOMAIN}"
 GLAMPING_DOMAIN="${GLAMPING_DOMAIN}"
+NMGSOFT_DOMAIN="${NMGSOFT_DOMAIN}"
 
 EOF
 

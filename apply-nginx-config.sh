@@ -90,6 +90,25 @@ else
     echo "ℹ️  GLAMPING_DOMAIN not set in .env (Skipping Glamping)"
 fi
 
+# -----------------------------------------------------------------------------
+# NMGSOFT Configuration (New)
+# -----------------------------------------------------------------------------
+NMGSOFT_CONF="./nginx/conf.d/nmgsoft.conf"
+NMGSOFT_TEMPLATE="${NMGSOFT_CONF}.template"
+
+if [ -n "$NMGSOFT_DOMAIN" ]; then
+    if [ -f "$NMGSOFT_TEMPLATE" ]; then
+        echo "🔧 Generating NMGSOFT Nginx config..."
+        sed -e "s|\${NMGSOFT_DOMAIN}|$NMGSOFT_DOMAIN|g" \
+            -e "s|\${PRIMARY_DOMAIN}|$PRIMARY_DOMAIN|g" \
+            "$NMGSOFT_TEMPLATE" > "$NMGSOFT_CONF"
+    else
+        echo "⚠️  Template file not found: $NMGSOFT_TEMPLATE (Skipping NMGSOFT)"
+    fi
+else
+    echo "ℹ️  NMGSOFT_DOMAIN not set in .env (Skipping NMGSOFT)"
+fi
+
 
 echo "🔄 Reloading Nginx..."
 docker compose exec nginx nginx -s reload
