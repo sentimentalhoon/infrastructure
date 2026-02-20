@@ -39,6 +39,12 @@ server {
 
     # Upload Limit
     client_max_body_size 50M;
+    
+    # Upstream response header buffer tuning
+    # Prevent 502: upstream sent too big header (Next.js Link preload headers)
+    proxy_buffer_size 128k;
+    proxy_buffers 8 256k;
+    proxy_busy_buffers_size 256k;
 
     # Docker DNS Resolver (Dynamic Resolution)
     resolver 127.0.0.11 valid=30s;
