@@ -1,13 +1,23 @@
-# TeleMarketing Reverse Proxy
+# ⚠️  IMPORTANT: AUTO-GENERATED CONFIGURATION
+# server_name and ssl_certificate paths in this file are automatically updated
+# by the ./init-ssl.sh script based on your selected Environment Profile.
+
+# Health Check 로그 제외 필터링 (Fallback for missing nginx.conf map)
+map "$remote_addr:$http_user_agent" $is_loggable {
+    ~^127\.0\.0\.1:curl 0;
+    default 1;
+}
 
 server {
     listen 80;
     server_name ${TELEMARKETING_DOMAIN};
 
+    # SSL 인증 전 HTTP 챌린지 허용
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
     }
 
+    # 모든 HTTP 요청을 HTTPS로 리다이렉트
     location / {
         return 301 https://$host$request_uri;
     }
@@ -18,23 +28,70 @@ server {
     http2 on;
     server_name ${TELEMARKETING_DOMAIN};
 
+    # Canonical Domain Redirect
     if ($host != "${TELEMARKETING_DOMAIN}") {
         return 301 https://${TELEMARKETING_DOMAIN}$request_uri;
     }
 
+    # SSL 설정 (기본 경로 - init-ssl.sh 실행 후 유효)
     ssl_certificate /etc/letsencrypt/live/${PRIMARY_DOMAIN}/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/${PRIMARY_DOMAIN}/privkey.pem;
 
-    access_log /var/log/nginx/telemarketing_access.log combined;
+    # Upload Limit
+    client_max_body_size 50M;
+
+    # Docker DNS Resolver (Dynamic Resolution)
+    resolver 127.0.0.11 valid=30s;
+
+    # 로그
+    access_log /var/log/nginx/telemarketing_access.log combined if=$is_loggable;
     error_log /var/log/nginx/telemarketing_error.log;
 
+    # 보안 헤더
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=()" always;
+    add_header Content-Security-Policy "default-src 'self'; base-uri 'self'; frame-ancestors 'self'; object-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-src 'self'; worker-src 'self' blob:; upgrade-insecure-requests;" always;
 
+    # Rate limiting
+    limit_req zone=general burst=100 nodelay;
+
+    # --- SECURITY: BASIC HARDENING ---
+    if ($request_method !~ ^(GET|POST|HEAD|PUT|DELETE|PATCH|OPTIONS)$ ) {
+        return 405;
+    }
+
+    if ($http_user_agent ~* (acunetix|sqlmap|nikto|metasploit|gobuster|dirbuster|nmap|zenmap|nessus|openvas|w3af|zap|burp|hydra|john|medusa|ncrack|scanner|grabber)) {
+        return 444;
+    }
+
+    if ($request_uri ~* ((\.\.|%2e%2e)(/|%2f|\\|%5c)) ) { return 444; }
+    if ($query_string ~* (union|select|insert|update|delete|drop|truncate|eval|base64|document\.|window\.|alert\(|cookie) ) { return 444; }
+
+    location ~ /\.(?!well-known).* {
+        access_log off; log_not_found off; return 444;
+    }
+
+    # Static file caching
+    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot|json|webmanifest)$ {
+        set $telemarketing_upstream "http://telemarketing-app:3000";
+        proxy_pass $telemarketing_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_valid 200 1y;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # Frontend (Next.js)
     location / {
-        proxy_pass http://telemarketing-app:3000;
+        set $telemarketing_upstream "http://telemarketing-app:3000";
+        proxy_pass $telemarketing_upstream;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -42,5 +99,6 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 60s;
     }
 }
