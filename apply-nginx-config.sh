@@ -109,6 +109,25 @@ else
     echo "ℹ️  NMGSOFT_DOMAIN not set in .env (Skipping NMGSOFT)"
 fi
 
+# -----------------------------------------------------------------------------
+# TeleMarketing Configuration
+# -----------------------------------------------------------------------------
+TELEMARKETING_CONF="./nginx/conf.d/telemarketing.conf"
+TELEMARKETING_TEMPLATE="${TELEMARKETING_CONF}.template"
+
+if [ -n "$TELEMARKETING_DOMAIN" ]; then
+    if [ -f "$TELEMARKETING_TEMPLATE" ]; then
+        echo "🔧 Generating TeleMarketing Nginx config..."
+        sed -e "s|\${TELEMARKETING_DOMAIN}|$TELEMARKETING_DOMAIN|g" \
+            -e "s|\${PRIMARY_DOMAIN}|$PRIMARY_DOMAIN|g" \
+            "$TELEMARKETING_TEMPLATE" > "$TELEMARKETING_CONF"
+    else
+        echo "⚠️  Template file not found: $TELEMARKETING_TEMPLATE (Skipping TeleMarketing)"
+    fi
+else
+    echo "ℹ️  TELEMARKETING_DOMAIN not set in .env (Skipping TeleMarketing)"
+fi
+
 
 echo "🔄 Reloading Nginx..."
 docker compose exec nginx nginx -s reload

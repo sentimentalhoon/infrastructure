@@ -57,6 +57,10 @@ echo ""
 echo "🏢  NMGSOFT Domain Configuration"
 read -p "Enter NMGSOFT Domain (optional): " NMGSOFT_DOMAIN
 
+echo ""
+echo "📞  TeleMarketing Domain Configuration"
+read -p "Enter TeleMarketing Domain (optional): " TELEMARKETING_DOMAIN
+
 
 # -----------------------------------------------------------------------------
 # 2. Write to .env
@@ -75,6 +79,7 @@ CERTBOT_EMAIL="${CERTBOT_EMAIL}"
 CAMPSTATION_DOMAIN="${CAMPSTATION_DOMAIN}"
 GLAMPING_DOMAIN="${GLAMPING_DOMAIN}"
 NMGSOFT_DOMAIN="${NMGSOFT_DOMAIN}"
+TELEMARKETING_DOMAIN="${TELEMARKETING_DOMAIN}"
 
 EOF
 
