@@ -61,8 +61,9 @@ server {
     add_header Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=()" always;
     add_header Content-Security-Policy "default-src 'self'; base-uri 'self'; frame-ancestors 'self'; object-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-src 'self'; worker-src 'self' blob:; upgrade-insecure-requests;" always;
 
-    # Rate limiting
-    limit_req zone=general burst=100 nodelay;
+    # NOTE:
+    # Do not apply server-level rate limiting for Next.js pages/assets.
+    # Main page can trigger many parallel static/font requests and cause 503.
 
     # --- SECURITY: BASIC HARDENING ---
     if ($request_method !~ ^(GET|POST|HEAD|PUT|DELETE|PATCH|OPTIONS)$ ) {
@@ -78,6 +79,21 @@ server {
 
     location ~ /\.(?!well-known).* {
         access_log off; log_not_found off; return 444;
+    }
+
+    # API rate limiting only
+    location ^~ /api/ {
+        limit_req zone=api burst=120 nodelay;
+        set $telemarketing_upstream "http://telemarketing-app:3000";
+        proxy_pass $telemarketing_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 60s;
     }
 
     # Static file caching
